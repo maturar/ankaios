@@ -212,9 +212,9 @@ async fn distribute_workload_states_to_agents(
                 log::warn!(
                     "Could not send states to agent '{}': '{:?}'",
                     agent_name,
-                    err,
+                    err.to_string(),
                 );
-                Err(err)?
+                // Err(err)?
             }
         } else {
             log::info!("Skipping sending workload states to agent '{agent_name}'. Agent disappeared in the meantime.");

@@ -248,17 +248,22 @@ impl CliCommands {
             .await
             .ok()?;
 
-        if let Some(ExecutionCommand::CompleteState(res)) = self.from_server.recv().await {
-            out_command_text =
-                // [impl->swdd~cli-returns-compact-state-object-when-object-field-mask-provided~1]
-                match generate_compact_state_output(&res, object_field_mask, output_format) {
-                    Ok(res) => Some(res),
-                    Err(err) => {
-                        output_and_error!(
-                            "Error occurred during processing response from server.\nError: {err}"
-                        );
-                        None
+        match self.from_server.recv().await {
+            Some(ExecutionCommand::CompleteState(res)) => {
+                out_command_text =
+                    // [impl->swdd~cli-returns-compact-state-object-when-object-field-mask-provided~1]
+                    match generate_compact_state_output(&res, object_field_mask, output_format) {
+                        Ok(res) => Some(res),
+                        Err(err) => {
+                            output_and_error!(
+                                "Error occurred during processing response from server.\nError: {err}"
+                            );
+                            None
+                        }
                     }
+            }
+            err => {
+                    output_and_error!("GetWorkloads: could not understand the answer from the server '{:?}'.", err);
                 }
         }
 
@@ -405,12 +410,14 @@ impl CliCommands {
                 "Failed to get execution command from server".to_string(),
             ))?;
 
-        let complete_state = if let ExecutionCommand::CompleteState(res) = res {
-            res
-        } else {
-            return Err(CliError::ExecutionError(
-                "Expected complete state".to_string(),
-            ));
+        let complete_state = match res {
+            ExecutionCommand::CompleteState(res) => res,
+            err => {
+                println!("DeleteWorkloads: could not understand the answer from the server '{:?}'.", err);
+                return Err(CliError::ExecutionError(
+                    "Expected complete state".to_string(),
+                ));
+            }
         };
 
         output_debug!("Got current state: {:?}", complete_state);
@@ -446,6 +453,7 @@ impl CliCommands {
             .map_err(|_| CliError::ConnectionTimeout("No response from the server".to_string()))?;
         } else {
             // [impl->swdd~no-delete-workloads-when-not-found~1]
+            println!("Current and new states are identical -> nothing to do");
             output_debug!("Current and new states are identical -> nothing to do");
         }
 

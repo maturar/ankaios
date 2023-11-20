@@ -199,7 +199,7 @@ async fn distribute_workload_states_to_agents(
                 agent_name,
                 filtered_workload_states
             );
-            sender
+            let result = sender
                 .send(Ok(proto::ExecutionRequest {
                     execution_request_enum: Some(ExecutionRequestEnum::UpdateWorkloadState(
                         proto::UpdateWorkloadState {
@@ -207,7 +207,15 @@ async fn distribute_workload_states_to_agents(
                         },
                     )),
                 }))
-                .await?;
+                .await;
+            if let Err(err) = result {
+                log::warn!(
+                    "Could not send states to agent '{}': '{:?}'",
+                    agent_name,
+                    err,
+                );
+                Err(err)?
+            }
         } else {
             log::info!("Skipping sending workload states to agent '{agent_name}'. Agent disappeared in the meantime.");
         }

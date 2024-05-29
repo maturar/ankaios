@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build_and_system_tests_linux_amd64:
-    name: Build and run system tests Linux amd64
+    name: Build and run system tests on Linux amd64
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/eclipse-ankaios/devcontainer-base:0.9.1
